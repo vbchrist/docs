@@ -1,0 +1,94 @@
+EBNF Grammar Definition
+=======================
+
+# Basic Elements
+number          ::= integer | float
+integer         ::= [0-9]+
+float           ::= [0-9]+ "." [0-9]+ | [0-9]+ ("e"|"E") ("+"|"-")? [0-9]+
+identifier      ::= [a-zA-Z][a-zA-Z0-9_]*
+separator       ::= ";" | newline
+comment         ::= "#" [^\n]* newline
+
+# Program Structure
+program         ::= statement*
+statement       ::= ((assignment | function_def | control_flow | expression) separator | comment)
+block           ::= indent statement+ dedent
+
+# Units (preserved from original)
+SI_base_unit    ::= "m" | "kg" | "g" | "s" | "A" | "K" | "mol" | "cd"
+derived_unit    ::= "N" | "J" | "W" | "Pa" | "V" | "ohm" | "Hz" | "F" | "Wb" | "T" | "H"
+imperial_unit   ::= "ft" | "in" | "mi" | "lb"
+SI_prefix       ::= "Y" | "Z" | "E" | "P" | "T" | "G" | "M" | "k" | "h" | "da" | 
+                   "d" | "c" | "m" | "u" | "n" | "p" | "f" | "a" | "z" | "y"
+basic_unit      ::= (SI_prefix)? (SI_base_unit | derived_unit | imperial_unit)
+unit_op         ::= "*" | "/" | "^"
+compound_unit   ::= basic_unit (unit_op (basic_unit | number))*
+unit            ::= basic_unit | compound_unit
+
+# Extended Operators
+math_op         ::= "+" | "-" | "*" | "/" | "%" | "^" | "mod"
+assignment_op   ::= "=" | ":=" | "+=" | "-=" | "*=" | "/=" | "%=" | "^="
+comparison_op   ::= "==" | "!=" | "<>" | "<" | "<=" | ">" | ">="
+logical_op      ::= "and" | "nand" | "nor" | "not" | "or" | "xor" | "xnor" | "mand" | "mor"
+
+# Expressions
+expression      ::= logical_expr
+logical_expr    ::= comparison_expr (logical_op comparison_expr)*
+comparison_expr ::= additive_expr (comparison_op additive_expr)*
+additive_expr   ::= term (math_op term)*
+term            ::= factor (("*"|"/"|"%") factor)*
+factor          ::= ("+"|"-"|"not")? (number unit? | identifier | vector | 
+                   "(" expression ")" | function_call | array_op | array_access)
+
+# Extended Functions
+math_func       ::= "abs" | "avg" | "ceil" | "clamp" | "floor" | "frac" | "hypot" | 
+                   "iclamp" | "max" | "min" | "mod" | "mul" | "ncdf" | "pow" | "root" | 
+                   "round" | "roundn" | "sgn" | "sqrt" | "sum" | "swap" | "trunc" |
+                   "equal" | "not_equal"
+
+trig_func       ::= "acos" | "acosh" | "asin" | "asinh" | "atan" | "atan2" | "atanh" |
+                   "cos" | "cosh" | "cot" | "csc" | "sec" | "sin" | "sinc" | "sinh" |
+                   "tan" | "tanh" | "deg2rad" | "rad2deg" | "deg2grad" | "grad2deg"
+
+stat_func       ::= "avg" | "erf" | "erfc" | "inrange" | "ncdf" | "equal" | "not_equal"
+
+exp_func        ::= "exp" | "expm1" | "log" | "log10" | "log1p" | "log2" | "logn"
+
+built_in_func   ::= math_func | trig_func | stat_func | exp_func | vector_func
+
+# Extended Control Flow
+control_flow    ::= if_stmt | for_stmt | while_stmt | repeat_stmt | switch_stmt | 
+                   return_stmt | break_stmt | continue_stmt | ternary_expr
+
+if_stmt         ::= "if" expression "then" block 
+                   ("else" "if" expression "then" block)* 
+                   ("else" block)?
+
+ternary_expr    ::= expression "?" expression ":" expression
+
+switch_stmt     ::= "switch" "(" expression ")" "{" case_list "}"
+case_list       ::= (case_stmt)* default_stmt?
+case_stmt       ::= "case" expression ":" (statement* "break" separator | statement*)
+default_stmt    ::= "default" ":" statement*
+
+for_stmt        ::= "for" identifier "in" range_expr ":" block
+while_stmt      ::= "while" expression ":" block
+repeat_stmt     ::= "repeat" block "until" expression
+loop_control    ::= break_stmt | continue_stmt
+break_stmt      ::= "break"
+continue_stmt   ::= "continue"
+
+# Arrays and Vectors (preserved from original)
+vector          ::= "[" expression_list "]" unit?
+expression_list ::= expression ("," expression)*
+array_access    ::= identifier "[" expression "]"
+array_op        ::= identifier operator "[" expression_list "]"
+
+# Assignment
+assignment      ::= identifier assignment_op expression
+
+# Error Productions
+error           ::= unit_error | type_error | syntax_error
+unit_error      ::= incompatible_units | invalid_unit_combination
+type_error      ::= incompatible_types | invalid_conversion
+syntax_error    ::= invalid_token | missing_parenthesis | invalid_identifier
